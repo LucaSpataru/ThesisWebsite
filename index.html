@@ -1,46 +1,302 @@
-<!DOCTYPE HTML>
-<!--
-	Eventually by HTML5 UP
-	html5up.net | @ajlkn
-	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
--->
-<html>
-	<head>
-		<title>Eventually by HTML5 UP</title>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-		<link rel="stylesheet" href="assets/css/main.css" />
-	</head>
-	<body class="is-preload">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeatherSensor Pro Dashboard</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for graphing -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f1f5f9;
+        }
 
-		<!-- Header -->
-			<header id="header">
-				<h1>Eventually</h1>
-				<p>A simple template for telling the world when you'll launch<br />
-				your next big thing. Brought to you by <a href="http://html5up.net">HTML5 UP</a>.</p>
-			</header>
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+        }
 
-		<!-- Signup Form -->
-			<form id="signup-form" method="post" action="#">
-				<input type="email" name="email" id="email" placeholder="Email Address" />
-				<input type="submit" value="Sign Up" />
-			</form>
+        .stat-value {
+            font-variant-numeric: tabular-nums;
+        }
 
-		<!-- Footer -->
-			<footer id="footer">
-				<ul class="icons">
-					<li><a href="#" class="icon brands fa-twitter"><span class="label">Twitter</span></a></li>
-					<li><a href="#" class="icon brands fa-instagram"><span class="label">Instagram</span></a></li>
-					<li><a href="#" class="icon brands fa-github"><span class="label">GitHub</span></a></li>
-					<li><a href="#" class="icon fa-envelope"><span class="label">Email</span></a></li>
-				</ul>
-				<ul class="copyright">
-					<li>&copy; Untitled.</li><li>Credits: <a href="http://html5up.net">HTML5 UP</a></li>
-				</ul>
-			</footer>
+        .pulse {
+            animation: pulse-animation 2s infinite;
+        }
 
-		<!-- Scripts -->
-			<script src="assets/js/main.js"></script>
+        @keyframes pulse-animation {
+            0% { box-shadow: 0 0 0 0px rgba(34, 197, 94, 0.4); }
+            100% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight">WeatherStation <span class="text-blue-500">v2.0</span></h1>
+                <p class="text-slate-400 flex items-center gap-2 mt-1">
+                    <span class="w-2 h-2 rounded-full bg-green-500 pulse"></span>
+                    Sensor Node #402 — Active
+                </p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="generateNewReport()" class="bg-blue-600 hover:bg-blue-700 transition px-4 py-2 rounded-lg font-medium flex items-center gap-2">
+                    <i data-lucide="download" class="w-4 h-4"></i> Export Data
+                </button>
+                <div class="bg-slate-800 px-4 py-2 rounded-lg border border-slate-700 text-sm flex items-center gap-2">
+                    <i data-lucide="calendar" class="w-4 h-4 text-slate-400"></i>
+                    <span id="current-date">--/--/----</span>
+                </div>
+            </div>
+        </header>
 
-	</body>
+        <!-- Main Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Temperature Card -->
+            <div class="glass-card p-6 flex items-center gap-6">
+                <div class="bg-orange-500/20 p-4 rounded-2xl text-orange-500">
+                    <i data-lucide="thermometer" class="w-8 h-8"></i>
+                </div>
+                <div>
+                    <p class="text-slate-400 text-sm font-medium uppercase tracking-wider">Temperature</p>
+                    <h2 class="text-4xl font-bold stat-value"><span id="temp-val">--.-</span>°C</h2>
+                    <p class="text-xs text-orange-400 mt-1 flex items-center gap-1">
+                        <i data-lucide="trending-up" class="w-3 h-3"></i> +0.2° from last read
+                    </p>
+                </div>
+            </div>
+
+            <!-- Humidity Card -->
+            <div class="glass-card p-6 flex items-center gap-6">
+                <div class="bg-blue-500/20 p-4 rounded-2xl text-blue-500">
+                    <i data-lucide="droplets" class="w-8 h-8"></i>
+                </div>
+                <div>
+                    <p class="text-slate-400 text-sm font-medium uppercase tracking-wider">Humidity</p>
+                    <h2 class="text-4xl font-bold stat-value"><span id="hum-val">--</span>%</h2>
+                    <p class="text-xs text-blue-400 mt-1 flex items-center gap-1">
+                        <i data-lucide="droplets" class="w-3 h-3"></i> Stable
+                    </p>
+                </div>
+            </div>
+
+            <!-- Pressure Card -->
+            <div class="glass-card p-6 flex items-center gap-6">
+                <div class="bg-emerald-500/20 p-4 rounded-2xl text-emerald-500">
+                    <i data-lucide="gauge" class="w-8 h-8"></i>
+                </div>
+                <div>
+                    <p class="text-slate-400 text-sm font-medium uppercase tracking-wider">Pressure</p>
+                    <h2 class="text-4xl font-bold stat-value"><span id="pres-val">----</span>hPa</h2>
+                    <p class="text-xs text-emerald-400 mt-1 flex items-center gap-1">
+                        <i data-lucide="info" class="w-3 h-3"></i> Normal
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Graphs Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="glass-card p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-semibold flex items-center gap-2">
+                        <i data-lucide="activity" class="w-5 h-5 text-blue-400"></i>
+                        Temperature History (24h)
+                    </h3>
+                    <select class="bg-slate-800 border-none text-xs rounded p-1 text-slate-300">
+                        <option>Last 24 Hours</option>
+                        <option>Last 7 Days</option>
+                    </select>
+                </div>
+                <div class="h-64">
+                    <canvas id="tempChart"></canvas>
+                </div>
+            </div>
+
+            <div class="glass-card p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-semibold flex items-center gap-2">
+                        <i data-lucide="bar-chart-3" class="w-5 h-5 text-emerald-400"></i>
+                        Environmental Trends
+                    </h3>
+                    <div class="flex gap-2">
+                        <span class="flex items-center gap-1 text-[10px] text-slate-400">
+                            <span class="w-2 h-2 rounded-full bg-blue-500"></span> Humidity
+                        </span>
+                    </div>
+                </div>
+                <div class="h-64">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Logs -->
+        <div class="mt-8 glass-card overflow-hidden">
+            <div class="p-4 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center">
+                <h3 class="font-semibold flex items-center gap-2">
+                    <i data-lucide="list" class="w-5 h-5"></i>
+                    Recent Sensor Events
+                </h3>
+                <span class="text-xs text-slate-500">Auto-refreshing...</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr class="text-slate-500 border-b border-slate-700">
+                            <th class="p-4 font-medium">Timestamp</th>
+                            <th class="p-4 font-medium">Event</th>
+                            <th class="p-4 font-medium">Reading</th>
+                            <th class="p-4 font-medium">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="event-log">
+                        <!-- Rows added by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialization
+        lucide.createIcons();
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString();
+
+        // Data Storage
+        let historyData = {
+            labels: [],
+            temp: [],
+            humidity: []
+        };
+
+        // Initialize Mock Data
+        function initMockData() {
+            const now = new Date();
+            for (let i = 24; i >= 0; i--) {
+                const time = new Date(now.getTime() - (i * 3600000));
+                historyData.labels.push(time.getHours() + ":00");
+                historyData.temp.push((20 + Math.random() * 5).toFixed(1));
+                historyData.humidity.push(Math.floor(40 + Math.random() * 20));
+            }
+        }
+        initMockData();
+
+        // Chart Configurations
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+                x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+            }
+        };
+
+        const tempCtx = document.getElementById('tempChart').getContext('2d');
+        const tempChart = new Chart(tempCtx, {
+            type: 'line',
+            data: {
+                labels: historyData.labels,
+                datasets: [{
+                    label: 'Temperature',
+                    data: historyData.temp,
+                    borderColor: '#f97316',
+                    backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointRadius: 0
+                }]
+            },
+            options: chartOptions
+        });
+
+        const trendCtx = document.getElementById('trendChart').getContext('2d');
+        const trendChart = new Chart(trendCtx, {
+            type: 'bar',
+            data: {
+                labels: historyData.labels.slice(-12),
+                datasets: [{
+                    label: 'Humidity',
+                    data: historyData.humidity.slice(-12),
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 4
+                }]
+            },
+            options: chartOptions
+        });
+
+        // Live Update Simulation
+        function updateLiveReadings() {
+            const temp = (22 + (Math.random() * 2 - 1)).toFixed(1);
+            const hum = Math.floor(45 + (Math.random() * 10 - 5));
+            const pres = Math.floor(1012 + (Math.random() * 4 - 2));
+
+            // Update UI
+            document.getElementById('temp-val').textContent = temp;
+            document.getElementById('hum-val').textContent = hum;
+            document.getElementById('pres-val').textContent = pres;
+
+            // Log event
+            addLogRow(temp, hum);
+            
+            // Update Charts
+            updateCharts(temp, hum);
+        }
+
+        function addLogRow(t, h) {
+            const tbody = document.getElementById('event-log');
+            const row = document.createElement('tr');
+            row.className = "border-b border-slate-800/50 hover:bg-slate-800/30 transition";
+            const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+            
+            row.innerHTML = `
+                <td class="p-4 text-slate-400">${time}</td>
+                <td class="p-4">Standard Polling</td>
+                <td class="p-4 font-mono">${t}°C / ${h}%</td>
+                <td class="p-4"><span class="px-2 py-1 rounded-full bg-green-500/10 text-green-500 text-xs">Healthy</span></td>
+            `;
+            
+            tbody.prepend(row);
+            if(tbody.children.length > 8) tbody.lastChild.remove();
+        }
+
+        function updateCharts(t, h) {
+            // Update Temp Chart
+            tempChart.data.datasets[0].data.shift();
+            tempChart.data.datasets[0].data.push(t);
+            tempChart.update('none');
+
+            // Update Humidity Chart
+            trendChart.data.datasets[0].data.shift();
+            trendChart.data.datasets[0].data.push(h);
+            trendChart.update('none');
+        }
+
+        function generateNewReport() {
+            const feedback = document.createElement('div');
+            feedback.className = "fixed bottom-8 right-8 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-2xl z-50 animate-bounce";
+            feedback.innerHTML = "Generating Data Report CSV...";
+            document.body.appendChild(feedback);
+            setTimeout(() => feedback.remove(), 2500);
+        }
+
+        // Run updates every 3 seconds
+        setInterval(updateLiveReadings, 3000);
+        updateLiveReadings();
+    </script>
+</body>
 </html>
